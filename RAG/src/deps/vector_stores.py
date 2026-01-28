@@ -1,7 +1,6 @@
 from uuid import uuid4
 from typing import List, Dict, Optional, Union
 
-import numpy as np
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
@@ -64,12 +63,12 @@ class QdrantVectorStore:
     def query(
         self,
         collection_name: str,
-        query_vector: np.ndarray,
+        query_vector: list[float],
         top_k: int = 5,
     ) -> List[models.ScoredPoint]:
-        return self.client.search(
+        return self.client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector.tolist(),
+            query=query_vector,
             limit=top_k,
             with_payload=True,
             with_vectors=False,

@@ -34,9 +34,7 @@ The Step Efficiency metric is an agentic metric that extracts the task from your
 - Using `update_current_trace()` to provide:
   - `input`
   - `output`
-  - `tools_called`
-
-### How Is It Calculated?
+  - `tools_called`### How Is It Calculated?
 
 Step Efficiency Score = AlignmentScore(Task, Execution Steps)
 

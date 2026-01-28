@@ -20,6 +20,10 @@ class LLMSettings(ProjectBaseSettings):
     llm_max_tokens: int = 16384
 
 
+class ConfidentSettings(ProjectBaseSettings):
+    confident_api_key: str | None = None
+
+
 class LangfuseSettings(ProjectBaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_public_key: str | None = None
@@ -33,12 +37,18 @@ class QdrantSettings(ProjectBaseSettings):
 
 
 class EmbeddingSettings(ProjectBaseSettings):
-    embedding_model_name: str = "thenlper/gte-large"
-    embedding_dimensions: int = 1024
-    embedding_batch_size: int = 32
+    embedding_model_name: str = "all-MiniLM-L6-v2"
+    embedding_dimensions: int = 384
+    embedding_batch_size: int = 1
 
 
-class ProjectSettings(LLMSettings, LangfuseSettings, QdrantSettings, EmbeddingSettings):
+class ProjectSettings(
+    LLMSettings,
+    LangfuseSettings,
+    QdrantSettings,
+    EmbeddingSettings,
+    ConfidentSettings,
+):
     @property
     def llm(self) -> LLMSettings:
         return LLMSettings(**self.model_dump())
@@ -55,8 +65,15 @@ class ProjectSettings(LLMSettings, LangfuseSettings, QdrantSettings, EmbeddingSe
     def embedding(self) -> EmbeddingSettings:
         return EmbeddingSettings(**self.model_dump())
 
+    @property
+    def confident(self) -> ConfidentSettings:
+        return ConfidentSettings(**self.model_dump())
+
 
 settings = ProjectSettings()
 os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse.langfuse_public_key
 os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse.langfuse_secret_key
 os.environ["LANGFUSE_BASE_URL"] = settings.langfuse.langfuse_base_url
+
+os.environ["OPENAI_API_KEY"] = "empty"
+os.environ["LOCAL_EMBEDDING_API_KEY"] = "empty"

@@ -4,6 +4,18 @@ Indexing Database
 https://huggingface.co/datasets/atitaarora/qdrant_doc
 ```
 
+## Usage
+
+
+Run Docker Compose (Qdrant Service)
+
+```shell
+docker compose -f docker
+```
+
+
+## Resource
+
 ```python
 import datasets
 

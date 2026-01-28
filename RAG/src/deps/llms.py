@@ -29,9 +29,6 @@ class LLMClient:
         temperature: float = 0,
         top_p: float = 0.1,
         max_tokens: int = 5000,
-        frequency_penalty: float = 0,
-        presence_penalty: float = 0,
-        stop: str | list[str] | None = None,
     ):
         completion = self.client.chat.completions.create(
             model=self.model_id,
@@ -39,8 +36,19 @@ class LLMClient:
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
-            frequency_penalty=frequency_penalty,
-            presence_penalty=presence_penalty,
-            stop=stop,
         )
         return completion.choices[0].message.content
+
+
+if __name__ == "__main__":
+    from src.settings import settings
+
+    llm_client = LLMClient(
+        base_url=settings.llm_base_url,
+        api_keys=settings.llm_api_key,
+        model_id=settings.llm_model,
+    )
+    completion = llm_client.chat_completion(
+        messages=[{"role": "user", "content": "Hello, how are you?"}],
+    )
+    print(completion)

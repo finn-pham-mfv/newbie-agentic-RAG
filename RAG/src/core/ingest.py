@@ -19,7 +19,9 @@ try:
         embedding_size=settings.embedding_dimensions,
         distance="cosine",
     )
-    logger.info(f"Created collection {settings.qdrant_collection_name}")
+    logger.info(
+        f"Created collection {settings.qdrant_collection_name} with embedding size {settings.embedding_dimensions}"
+    )
 except Exception as e:
     logger.error(f"Error creating collection {settings.qdrant_collection_name}: {e}")
     raise e
@@ -51,15 +53,22 @@ for document in tqdm(all_documents):
     chunked_documents += text_splitter.split_documents([document])
 logger.info(f"Chunked {len(chunked_documents)} documents")
 
-embeddings = embedding_client.embed(chunked_documents)
+embeddings = embedding_client.embed(
+    [document.page_content for document in chunked_documents]
+)
 logger.info(f"Embedded {len(embeddings)} documents")
 
+payloads = [
+    {"content": document.page_content, "sources": document.metadata["source"]}
+    for document in chunked_documents
+]
+
 vector_store.add_embeddings(
-    collection_name=settings.qdrant.qdrant_collection_name,
+    collection_name=settings.qdrant_collection_name,
     embeddings=embeddings,
-    payloads=[document.metadata for document in chunked_documents],
+    payloads=payloads,
     batch_size=2,
 )
 logger.info(
-    f"Added {len(embeddings)} documents to collection {settings.qdrant.qdrant_collection_name}"
+    f"Added {len(embeddings)} documents to collection {settings.qdrant_collection_name}"
 )

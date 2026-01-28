@@ -32,5 +32,5 @@ class EmbeddingClient:
 
 if __name__ == "__main__":
     text = "Hello World!"
-    embed = EmbeddingClient(model_name="thenlper/gte-large").embed([text])
+    embed = EmbeddingClient(model_name="thenlper/gte-base").embed([text])
     print(len(embed[0]))
