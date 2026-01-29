@@ -1,3 +1,4 @@
+from pathlib import Path
 from deepeval.models.llms import GPTModel
 from deepeval.models.embedding_models import LocalEmbeddingModel
 from deepeval.synthesizer.config import (
@@ -7,6 +8,7 @@ from deepeval.synthesizer.config import (
     ContextConstructionConfig,
 )
 from deepeval.synthesizer import Synthesizer, Evolution
+from .utils import save_goldens_to_files
 
 model = GPTModel(
     model="gemini-2.5-flash",
@@ -21,8 +23,9 @@ embeder = LocalEmbeddingModel(
 )
 
 filtration_config = FiltrationConfig(
-    synthetic_input_quality_threshold=0.7,
-    max_quality_retries=3,
+    # Relax threshold to avoid over-filtering all generated samples
+    synthetic_input_quality_threshold=0.3,
+    max_quality_retries=1,
     critic_model=model,
 )
 
@@ -46,7 +49,9 @@ styling_config = StylingConfig(
 context_construction_config = ContextConstructionConfig(
     embedder=embeder,
     critic_model=model,
-    encoding="text",
+    encoding="utf-8",
+    chunk_size=512,
+    chunk_overlap=50,
     max_contexts_per_document=3,
     min_contexts_per_document=1,
     max_context_length=3,
@@ -63,19 +68,15 @@ synthesizer = Synthesizer(
     cost_tracking=True,
 )
 
+file_path = "/Users/phung.pham/Documents/PHUNGPX/deepeval_exploration/RAG/data/theranos_legacy.txt"
+
 goldens = synthesizer.generate_goldens_from_docs(
-    document_paths=[
-        "/Users/phung.pham/Documents/PHUNGPX/deepeval_exploration/RAG/data/theranos_legacy.txt"
-    ],
+    document_paths=[file_path],
     include_expected_output=True,
-    context_construction_config=ContextConstructionConfig(
-        chunk_size=512,
-        chunk_overlap=50,
-        max_contexts_per_document=3,
-        critic_model=model,
-        embedder=embeder,
-    ),
+    context_construction_config=context_construction_config,
     max_goldens_per_context=2,
 )
 
-print(goldens)
+output_dir = str(Path("RAG/data/goldens") / Path(file_path).stem)
+
+save_goldens_to_files(goldens, output_dir)
