@@ -12,7 +12,7 @@ def save_goldens_to_files(goldens: list[Golden], output_dir: str = "goldens"):
         logger.info(f"Created directory: {output_dir}")
 
     for golden in goldens:
-        file_dir = output_dir / Path(golden.sourceFile).stem
+        file_dir = output_dir / Path(golden.source_file).stem
         if not file_dir.exists():
             file_dir.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created directory: {file_dir}")

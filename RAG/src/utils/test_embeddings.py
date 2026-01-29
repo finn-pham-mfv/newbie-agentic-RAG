@@ -1,7 +1,7 @@
 import numpy as np
 import openai
 
-model_id = "text-embedding-all-minilm-l6-v2-embedding"
+model_id = "text-embedding-snowflake-arctic-embed-l-v2.0"
 base_url = "http://127.0.0.1:1234/v1"
 api_key = "empty"
 
@@ -45,6 +45,8 @@ document_embed_array = document_embed_array / np.linalg.norm(
     document_embed_array, ord=2, axis=1, keepdims=True
 )
 
+print("query_embed_array.shape", query_embed_array.shape)
+print("document_embed_array.shape", document_embed_array.shape)
 # Compute cosine similarity scores
 scores = np.dot(query_embed_array, document_embed_array.T)
 

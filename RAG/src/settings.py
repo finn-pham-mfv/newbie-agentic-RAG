@@ -38,15 +38,15 @@ class QdrantSettings(ProjectBaseSettings):
 
 class SentenceTransformerEmbeddingSettings(ProjectBaseSettings):
     embedding_model_name: str = "all-MiniLM-L6-v2"
-    embedding_dimensions: int = 384
+    embedding_dimensions: int = 1024
     embedding_batch_size: int = 1
 
 
 class OpenAIEmbeddingSettings(ProjectBaseSettings):
     embedding_base_url: str = "http://127.0.0.1:1234/v1"
     embedding_api_key: str = "empty"
-    embedding_model_id: str = "text-embedding-all-minilm-l6-v2-embedding"
-    embedding_dimensions: int = 384
+    embedding_model_id: str = "text-embedding-snowflake-arctic-embed-l-v2.0"
+    embedding_dimensions: int = 1024
 
 
 class ProjectSettings(
