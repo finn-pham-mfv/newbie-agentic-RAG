@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 
-class LLMClient:
+class OpenAILLMClient:
     def __init__(
         self, base_url: str, api_keys: str | list[str], model_id: str = "gemma-3-12b-it"
     ):
@@ -43,7 +43,7 @@ class LLMClient:
 if __name__ == "__main__":
     from src.settings import settings
 
-    llm_client = LLMClient(
+    llm_client = OpenAILLMClient(
         base_url=settings.llm_base_url,
         api_keys=settings.llm_api_key,
         model_id=settings.llm_model,

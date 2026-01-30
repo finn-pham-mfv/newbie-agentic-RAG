@@ -3,9 +3,6 @@ import wikipediaapi
 
 
 def save_wikipedia_article(url, output_format="md", folder="docs"):
-    """
-    Crawls a Wikipedia page and saves it as a .md or .txt file.
-    """
     # Extract the page title from the URL
     # Example: https://en.wikipedia.org/wiki/Albert_Einstein -> Albert_Einstein
     page_name = url.split("/")[-1]
@@ -49,14 +46,13 @@ def save_wikipedia_article(url, output_format="md", folder="docs"):
     print(f"Successfully saved: {file_path}")
 
 
-# --- Execution ---
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, required=True)
     parser.add_argument("--output_format", type=str, default="md")
-    parser.add_argument("--folder", type=str, default="RAG/data/wikipedia")
+    parser.add_argument("--folder", type=str, default="data/wikipedia")
     args = parser.parse_args()
 
     save_wikipedia_article(args.url, args.output_format, args.folder)

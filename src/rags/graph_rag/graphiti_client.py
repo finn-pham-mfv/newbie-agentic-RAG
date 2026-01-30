@@ -7,7 +7,9 @@ from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerCli
 
 from loguru import logger
 from src.settings import settings
-from openai_client_warpper import OpenAIClient as OpenAIClientWrapper
+from src.rags.graph_rag.open_ai_client_wrapper import (
+    OpenAIClient as OpenAIClientWrapper,
+)
 
 
 class GraphitiClient:
@@ -39,7 +41,7 @@ class GraphitiClient:
         )
 
         self.driver = Neo4jDriver(
-            uri=settings.graph_db_url,
+            uri=settings.graph_db_uri,
             user=settings.graph_db_username,
             password=settings.graph_db_password,
         )

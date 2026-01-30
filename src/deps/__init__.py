@@ -1,12 +1,12 @@
 from .document_loader import DocumentLoader
-from .embeddings import SentenceTransformerEmbedding, OpenAIEmbedding
+from .embeddings import SentenceTransformerEmbedding, OpenAIEmbeddingClient
 from .vector_stores import QdrantVectorStore
-from .llms import LLMClient
+from .llms import OpenAILLMClient
 
 __all__ = [
     "DocumentLoader",
     "SentenceTransformerEmbedding",
-    "OpenAIEmbedding",
+    "OpenAIEmbeddingClient",
     "QdrantVectorStore",
-    "LLMClient",
+    "OpenAILLMClient",
 ]

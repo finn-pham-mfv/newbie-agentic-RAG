@@ -12,8 +12,8 @@ class ProjectBaseSettings(BaseSettings, ABC):
     )
 
 
-class LLMSettings(ProjectBaseSettings):
-    llm_model: str = "gpt-4o-mini"
+class OpenAILLMSettings(ProjectBaseSettings):
+    llm_model: str
     llm_api_key: str | None = None
     llm_base_url: str | None = None
     llm_temperature: float = 0.0
@@ -30,48 +30,51 @@ class LangfuseSettings(ProjectBaseSettings):
     langfuse_base_url: str | None = None
 
 
-class QdrantSettings(ProjectBaseSettings):
-    qdrant_url: str = "http://localhost:6333"
+class QdrantVectorStoreSettings(ProjectBaseSettings):
+    qdrant_uri: str
     qdrant_api_key: str | None = None
-    qdrant_collection_name: str = "wikipedia-collection"
-
-
-class SentenceTransformerEmbeddingSettings(ProjectBaseSettings):
-    embedding_model_name: str = "all-MiniLM-L6-v2"
-    embedding_dimensions: int = 1024
-    embedding_batch_size: int = 1
+    qdrant_collection_name: str
 
 
 class OpenAIEmbeddingSettings(ProjectBaseSettings):
-    embedding_base_url: str = "http://127.0.0.1:1234/v1"
-    embedding_api_key: str = "empty"
-    embedding_model_id: str = "text-embedding-snowflake-arctic-embed-l-v2.0"
-    embedding_dimensions: int = 1024
+    embedding_base_url: str
+    embedding_api_key: str
+    embedding_model: str
+    embedding_dimensions: int
+
+
+class RerankerSettings(ProjectBaseSettings):
+    reranker_base_url: str
+    reranker_api_key: str
+    reranker_model: str
+
+
+class Neo4jGraphDBSettings(ProjectBaseSettings):
+    graph_db_uri: str
+    graph_db_username: str
+    graph_db_password: str
 
 
 class ProjectSettings(
-    LLMSettings,
+    OpenAILLMSettings,
     LangfuseSettings,
-    QdrantSettings,
-    SentenceTransformerEmbeddingSettings,
+    QdrantVectorStoreSettings,
     OpenAIEmbeddingSettings,
     ConfidentSettings,
+    RerankerSettings,
+    Neo4jGraphDBSettings,
 ):
     @property
-    def llm(self) -> LLMSettings:
-        return LLMSettings(**self.model_dump())
+    def openai_llm(self) -> OpenAILLMSettings:
+        return OpenAILLMSettings(**self.model_dump())
 
     @property
-    def qdrant(self) -> QdrantSettings:
-        return QdrantSettings(**self.model_dump())
+    def qdrant_vector_store(self) -> QdrantVectorStoreSettings:
+        return QdrantVectorStoreSettings(**self.model_dump())
 
     @property
     def langfuse(self) -> LangfuseSettings:
         return LangfuseSettings(**self.model_dump())
-
-    @property
-    def sentence_transformer_embedding(self) -> SentenceTransformerEmbeddingSettings:
-        return SentenceTransformerEmbeddingSettings(**self.model_dump())
 
     @property
     def openai_embedding(self) -> OpenAIEmbeddingSettings:
@@ -81,11 +84,16 @@ class ProjectSettings(
     def confident(self) -> ConfidentSettings:
         return ConfidentSettings(**self.model_dump())
 
+    @property
+    def reranker(self) -> RerankerSettings:
+        return RerankerSettings(**self.model_dump())
+
+    @property
+    def neo4j_graph_db(self) -> Neo4jGraphDBSettings:
+        return Neo4jGraphDBSettings(**self.model_dump())
+
 
 settings = ProjectSettings()
 os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse.langfuse_public_key
 os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse.langfuse_secret_key
 os.environ["LANGFUSE_BASE_URL"] = settings.langfuse.langfuse_base_url
-
-os.environ["OPENAI_API_KEY"] = "empty"
-os.environ["LOCAL_EMBEDDING_API_KEY"] = "empty"

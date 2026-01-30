@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "chromadb>=1.4.1",
-    "datasets>=4.5.0",
     "deepeval>=3.7.9",
+    "docling>=2.70.0",
     "graphiti-core>=0.26.3",
     "html2text>=2025.4.15",
     "langchain>=1.2.4",
@@ -15,7 +15,6 @@ dependencies = [
     "langchain-core>=1.2.7",
     "langchain-text-splitters>=1.1.0",
     "loguru>=0.7.3",
-    "notebook>=7.5.2",
     "pydantic-ai>=1.42.0",
     "qdrant-client>=1.16.2",
     "sentence-transformers>=5.2.2",

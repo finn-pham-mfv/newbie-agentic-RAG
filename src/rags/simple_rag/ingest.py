@@ -3,36 +3,23 @@ from loguru import logger
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.settings import settings
-from src.deps import (
-    QdrantVectorStore,
-    DocumentLoader,
-    SentenceTransformerEmbedding,
-    OpenAIEmbedding,
-)
+from src.deps import QdrantVectorStore, DocumentLoader, OpenAIEmbeddingClient
 
 
 class Ingestion:
     def __init__(
         self,
-        embedding_provider: str = "openai",
         chunk_size: int = 512,
         chunk_overlap: int = 20,
     ):
-        if embedding_provider == "openai":
-            self.embedding_client = OpenAIEmbedding(
-                base_url=settings.embedding_base_url,
-                api_key=settings.embedding_api_key,
-                model_id=settings.embedding_model_id,
-            )
-        elif embedding_provider == "sentence-transformer":
-            self.embedding_client = SentenceTransformerEmbedding(
-                model_name=settings.embedding_model_name,
-                batch_size=settings.embedding_batch_size,
-                model_dim=settings.embedding_dimensions,
-            )
+        self.embedding_client = OpenAIEmbeddingClient(
+            base_url=settings.embedding_base_url,
+            api_key=settings.embedding_api_key,
+            model_id=settings.embedding_model,
+        )
 
         self.vector_store = QdrantVectorStore(
-            uri=settings.qdrant_url,
+            uri=settings.qdrant_uri,
             api_key=settings.qdrant_api_key,
         )
         try:
@@ -110,5 +97,8 @@ if __name__ == "__main__":
     if args.collection_name:
         settings.qdrant_collection_name = args.collection_name
 
-    ingestion = Ingestion(embedding_provider="openai")
+    ingestion = Ingestion(
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+    )
     ingestion.ingest_documents(file_paths)
