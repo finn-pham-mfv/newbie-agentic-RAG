@@ -846,6 +846,7 @@ dependencies = [
     { name = "chromadb" },
     { name = "datasets" },
     { name = "deepeval" },
+    { name = "graphiti-core" },
     { name = "html2text" },
     { name = "langchain" },
     { name = "langchain-community" },
@@ -865,6 +866,7 @@ requires-dist = [
     { name = "chromadb", specifier = ">=1.4.1" },
     { name = "datasets", specifier = ">=4.5.0" },
     { name = "deepeval", specifier = ">=3.7.9" },
+    { name = "graphiti-core", specifier = ">=0.26.3" },
     { name = "html2text", specifier = ">=2025.4.15" },
     { name = "langchain", specifier = ">=1.2.4" },
     { name = "langchain-community", specifier = ">=0.4.1" },
@@ -1258,6 +1260,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e5/7b/adfd75544c415c487b33061fe7ae526165241c1ea133f9a9125a56b39fd8/googleapis_common_protos-1.72.0.tar.gz", hash = "sha256:e55a601c1b32b52d7a3e65f43563e2aa61bcd737998ee672ac9b951cd49319f5", size = 147433, upload-time = "2025-11-06T18:29:24.087Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c4/ab/09169d5a4612a5f92490806649ac8d41e3ec9129c636754575b3553f4ea4/googleapis_common_protos-1.72.0-py3-none-any.whl", hash = "sha256:4299c5a82d5ae1a9702ada957347726b167f9f8d1fc352477702a1e851ff4038", size = 297515, upload-time = "2025-11-06T18:29:13.14Z" },
+]
+
+[[package]]
+name = "graphiti-core"
+version = "0.26.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "diskcache" },
+    { name = "neo4j" },
+    { name = "numpy" },
+    { name = "openai" },
+    { name = "posthog" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "tenacity" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/88/7ba38982d9331a225815600efa0a16e7c0c965411d2f94d750a88b0738a5/graphiti_core-0.26.3.tar.gz", hash = "sha256:146877d8e5896fdceb71b1a163e60f4bcfc7c7b48b66a0157a05e094c49df963", size = 6727423, upload-time = "2026-01-22T16:31:32.483Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/73/b24f0a19419e11bca080b6cde8c422032a49c0cf79142ed216f42fd57a31/graphiti_core-0.26.3-py3-none-any.whl", hash = "sha256:db9d549832ce5c00ed860fad56e27279632c924a053a3a1ee4de5a4b2d7c33c7", size = 193515, upload-time = "2026-01-22T16:31:30.338Z" },
 ]
 
 [[package]]
@@ -2706,6 +2727,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/6d/fd/91545e604bc3dad7dca9ed03284086039b294c6b3d75c0d2fa45f9e9caf3/nbformat-5.10.4.tar.gz", hash = "sha256:322168b14f937a5d11362988ecac2a4952d3d8e3a2cbeb2319584631226d5b3a", size = 142749, upload-time = "2024-04-04T11:20:37.371Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/82/0340caa499416c78e5d8f5f05947ae4bc3cba53c9f038ab6e9ed964e22f1/nbformat-5.10.4-py3-none-any.whl", hash = "sha256:3b48d6c8fbca4b299bf3982ea7db1af21580e4fec269ad087b9e81588891200b", size = 78454, upload-time = "2024-04-04T11:20:34.895Z" },
+]
+
+[[package]]
+name = "neo4j"
+version = "6.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/01/d6ce65e4647f6cb2b9cca3b813978f7329b54b4e36660aaec1ddf0ccce7a/neo4j-6.1.0.tar.gz", hash = "sha256:b5dde8c0d8481e7b6ae3733569d990dd3e5befdc5d452f531ad1884ed3500b84", size = 239629, upload-time = "2026-01-12T11:27:34.777Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/5c/ee71e2dd955045425ef44283f40ba1da67673cf06404916ca2950ac0cd39/neo4j-6.1.0-py3-none-any.whl", hash = "sha256:3bd93941f3a3559af197031157220af9fd71f4f93a311db687bd69ffa417b67d", size = 325326, upload-time = "2026-01-12T11:27:33.196Z" },
 ]
 
 [[package]]
