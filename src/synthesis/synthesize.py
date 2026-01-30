@@ -87,11 +87,11 @@ synthesizer = Synthesizer(
     cost_tracking=True,
 )
 
-file_dir = Path("RAG/data/wikipedia")
+file_dir = Path("data/wikipedia")
 file_paths = list(file_dir.glob("**/*.*"))
 logger.info(f"Found {len(file_paths)} files in {file_dir}")
 
-output_dir = Path("RAG/data/goldens")
+output_dir = Path("data/goldens")
 output_dir.mkdir(parents=True, exist_ok=True)
 logger.info(f"Saving goldens to {output_dir}")
 
