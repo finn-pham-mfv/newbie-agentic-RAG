@@ -34,6 +34,7 @@ class QdrantVectorStoreSettings(ProjectBaseSettings):
     qdrant_uri: str
     qdrant_api_key: str | None = None
     qdrant_collection_name: str
+    retrieval_score_threshold: float = 0.0
 
 
 class OpenAIEmbeddingSettings(ProjectBaseSettings):
@@ -94,6 +95,10 @@ class SessionSettings(ProjectBaseSettings):
     max_history_messages: int = 20
 
 
+class RedisSettings(ProjectBaseSettings):
+    redis_url: str = "redis://localhost:6379"
+
+
 class ProjectSettings(
     OpenAILLMSettings,
     LangfuseSettings,
@@ -108,6 +113,7 @@ class ProjectSettings(
     AuthSettings,
     JobSettings,
     SessionSettings,
+    RedisSettings,
 ):
     @property
     def openai_llm(self) -> OpenAILLMSettings:
@@ -160,6 +166,10 @@ class ProjectSettings(
     @property
     def sessions(self) -> SessionSettings:
         return SessionSettings(**self.model_dump())
+
+    @property
+    def redis(self) -> RedisSettings:
+        return RedisSettings(**self.model_dump())
 
 
 settings = ProjectSettings()
