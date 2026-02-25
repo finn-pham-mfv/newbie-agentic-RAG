@@ -1,21 +1,20 @@
+import asyncio
 from enum import Enum
 from pathlib import Path
 from loguru import logger
-from src.synthesis.bedrock_model import AmazonBedrockModel
-from deepeval.models.embedding_models import LocalEmbeddingModel
+
+from deepeval.models.llms import GPTModel
 from deepeval.synthesizer.config import (
     FiltrationConfig,
     EvolutionConfig,
     StylingConfig,
-    ContextConstructionConfig,
 )
 from dataclasses import dataclass
 from deepeval.synthesizer import Synthesizer, Evolution
 
 from src.settings import settings
-
-# from src.evals.bedrock_llm_wrapper import BedrockLLMWrapper
-from src.synthesis.utils import save_goldens_to_files
+from src.deps import OpenAIEmbedding, QdrantVectorStore
+from src.synthesis.generate_contexts import save_goldens_to_files, generate_contexts
 
 
 class Topic(Enum):
@@ -48,36 +47,12 @@ STYLING_CONFIG = {
 
 TOPIC = Topic.RESEARCH_PAPER.value
 
-# model = GPTModel(
-#     model=settings.llm_model,
-#     api_key=settings.llm_api_key,
-#     base_url=settings.llm_base_url,
-#     cost_per_input_token=0.3 * 10**-6,
-#     cost_per_output_token=2.5 * 10**-6,
-# )
-
-import os
-
-aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
-aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-aws_session_token = os.environ.get("AWS_SESSION_TOKEN")
-
-model = AmazonBedrockModel(
-    model=settings.critique_model_name,
-    region=settings.critique_model_region_name,
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    aws_session_token=aws_session_token,
+model = GPTModel(
+    model=settings.llm_model,
+    api_key=settings.llm_api_key,
+    base_url=settings.llm_base_url,
     cost_per_input_token=0.3 * 10**-6,
     cost_per_output_token=2.5 * 10**-6,
-    generation_kwargs={"max_tokens": 7000, "temperature": 0.1, "top_p": 0.9},
-)
-
-
-embeder = LocalEmbeddingModel(
-    model=settings.embedding_model,
-    base_url=settings.embedding_base_url,
-    api_key=settings.embedding_api_key,
 )
 
 # Apply for filtering the generated query by the critic model
@@ -110,19 +85,6 @@ styling_config = StylingConfig(
     scenario=STYLING_CONFIG[TOPIC].scenario,
 )
 
-# Settings for building RAG
-context_construction_config = ContextConstructionConfig(
-    embedder=embeder,
-    critic_model=model,
-    encoding="utf-8",
-    chunk_size=1024,
-    chunk_overlap=20,
-    max_contexts_per_document=5,
-    min_contexts_per_document=3,
-    max_context_length=5,
-    min_context_length=3,
-)
-
 synthesizer = Synthesizer(
     model=model,
     async_mode=False,
@@ -133,6 +95,17 @@ synthesizer = Synthesizer(
     cost_tracking=True,
 )
 
+embedder = OpenAIEmbedding(
+    base_url=settings.embedding_base_url,
+    api_key=settings.embedding_api_key,
+    model_id=settings.embedding_model,
+)
+
+vector_store = QdrantVectorStore(
+    uri=settings.qdrant_uri,
+    api_key=settings.qdrant_api_key,
+)
+
 
 if __name__ == "__main__":
     import argparse
@@ -141,6 +114,8 @@ if __name__ == "__main__":
     parser.add_argument("--topic", type=Topic, default=Topic.WIKIPEDIA_ARTICLE)
     parser.add_argument("--file_dir", type=Path, default=Path("data/wikipedia/files"))
     parser.add_argument("--output_dir", type=Path, default=Path("data/goldens"))
+    parser.add_argument("--num_contexts", type=int, default=5)
+    parser.add_argument("--context_size", type=int, default=5)
     args = parser.parse_args()
 
     file_dir = Path(args.file_dir)
@@ -155,11 +130,23 @@ if __name__ == "__main__":
 
     for file_path in file_paths:
         logger.info(f"Synthesizing {file_path}")
-        goldens = synthesizer.generate_goldens_from_docs(
-            document_paths=[str(file_path)],
+        contexts = asyncio.run(
+            generate_contexts(
+                str(file_path),
+                model=model,
+                embedder=embedder,
+                vector_store=vector_store,
+                embedding_size=settings.embedding_dimensions,
+                num_contexts=args.num_contexts,
+                context_size=args.context_size,
+            )
+        )
+        logger.info(f"Built {len(contexts)} contexts from {file_path.name}")
+        goldens = synthesizer.generate_goldens_from_contexts(
+            contexts=contexts,
             include_expected_output=True,
-            context_construction_config=context_construction_config,
             max_goldens_per_context=1,
+            source_files=[str(file_path)] * len(contexts),
         )
         logger.info(f"Synthesis cost: {synthesizer.synthesis_cost}")
         save_goldens_to_files(goldens, output_dir)
