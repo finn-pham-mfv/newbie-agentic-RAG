@@ -64,7 +64,7 @@ async def main():
 
     # Initialize agent dependency
     deps = AgentDependencies(
-        basic_rag=BasicRAG(qdrant_collection_name=args.collection_name),
+        basic_rag=BasicRAG(collection_name=args.collection_name),
         graph_rag=GraphRAG(),
         top_k=args.top_k,
         citations=None,

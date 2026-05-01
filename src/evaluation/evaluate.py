@@ -159,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--file_dir", type=str, required=True)
     parser.add_argument("--retrieval_window_size", type=int, default=5)
     parser.add_argument(
-        "--collection_name", type=str, default=settings.qdrant_collection_name
+        "--collection_name", type=str, default=settings.active_collection_name
     )
     parser.add_argument("--force_rerun", action="store_true")
     parser.add_argument("--threshold", type=float, default=0.5)

@@ -30,11 +30,21 @@ class LangfuseSettings(ProjectBaseSettings):
     langfuse_base_url: str | None = None
 
 
+class VectorStoreProviderSettings(ProjectBaseSettings):
+    vector_store_provider: str = "qdrant"  # "qdrant" or "milvus"
+
+
 class QdrantVectorStoreSettings(ProjectBaseSettings):
-    qdrant_uri: str
+    qdrant_uri: str | None = None
     qdrant_api_key: str | None = None
-    qdrant_collection_name: str
+    qdrant_collection_name: str | None = None
     retrieval_score_threshold: float = 0.0
+
+
+class MilvusVectorStoreSettings(ProjectBaseSettings):
+    milvus_uri: str | None = None
+    milvus_token: str | None = None
+    milvus_collection_name: str | None = None
 
 
 class OpenAIEmbeddingSettings(ProjectBaseSettings):
@@ -45,15 +55,15 @@ class OpenAIEmbeddingSettings(ProjectBaseSettings):
 
 
 class RerankerSettings(ProjectBaseSettings):
-    reranker_base_url: str
-    reranker_api_key: str
-    reranker_model: str
+    reranker_base_url: str | None = None
+    reranker_api_key: str | None = None
+    reranker_model: str | None = None
 
 
 class Neo4jGraphDBSettings(ProjectBaseSettings):
-    graph_db_uri: str
-    graph_db_username: str
-    graph_db_password: str
+    graph_db_uri: str | None = None
+    graph_db_username: str | None = None
+    graph_db_password: str | None = None
 
 
 class MinIOSettings(ProjectBaseSettings):
@@ -64,8 +74,8 @@ class MinIOSettings(ProjectBaseSettings):
 
 
 class CritiqueModelSettings(ProjectBaseSettings):
-    critique_model_name: str
-    critique_model_region_name: str
+    critique_model_name: str | None = None
+    critique_model_region_name: str | None = None
 
 
 class APISettings(ProjectBaseSettings):
@@ -99,10 +109,19 @@ class RedisSettings(ProjectBaseSettings):
     redis_url: str = "redis://localhost:6379"
 
 
+class GoogleDocAISettings(ProjectBaseSettings):
+    google_doc_ai_project_id: str | None = None
+    google_doc_ai_location: str = "us"
+    google_doc_ai_processor_id: str | None = None
+    google_application_credentials: str | None = None
+
+
 class ProjectSettings(
     OpenAILLMSettings,
     LangfuseSettings,
+    VectorStoreProviderSettings,
     QdrantVectorStoreSettings,
+    MilvusVectorStoreSettings,
     OpenAIEmbeddingSettings,
     ConfidentSettings,
     RerankerSettings,
@@ -114,6 +133,7 @@ class ProjectSettings(
     JobSettings,
     SessionSettings,
     RedisSettings,
+    GoogleDocAISettings,
 ):
     @property
     def openai_llm(self) -> OpenAILLMSettings:
@@ -122,6 +142,17 @@ class ProjectSettings(
     @property
     def qdrant_vector_store(self) -> QdrantVectorStoreSettings:
         return QdrantVectorStoreSettings(**self.model_dump())
+
+    @property
+    def milvus_vector_store(self) -> MilvusVectorStoreSettings:
+        return MilvusVectorStoreSettings(**self.model_dump())
+
+    @property
+    def active_collection_name(self) -> str | None:
+        """Return the collection name for the currently active vector store provider."""
+        if self.vector_store_provider == "milvus":
+            return self.milvus_collection_name
+        return self.qdrant_collection_name
 
     @property
     def langfuse(self) -> LangfuseSettings:
@@ -171,10 +202,23 @@ class ProjectSettings(
     def redis(self) -> RedisSettings:
         return RedisSettings(**self.model_dump())
 
+    @property
+    def google_doc_ai(self) -> GoogleDocAISettings:
+        return GoogleDocAISettings(**self.model_dump())
+
 
 settings = ProjectSettings()
-os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse.langfuse_public_key
-os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse.langfuse_secret_key
-os.environ["LANGFUSE_BASE_URL"] = settings.langfuse.langfuse_base_url
+
+if settings.langfuse.langfuse_public_key:
+    os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse.langfuse_public_key
+if settings.langfuse.langfuse_secret_key:
+    os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse.langfuse_secret_key
+if settings.langfuse.langfuse_base_url:
+    os.environ["LANGFUSE_BASE_URL"] = settings.langfuse.langfuse_base_url
 
 os.environ["CONFIDENT_METRIC_LOGGING_FLUSH"] = "1"
+
+if settings.google_doc_ai.google_application_credentials:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
+        settings.google_doc_ai.google_application_credentials
+    )

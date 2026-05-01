@@ -1,5 +1,5 @@
 from loguru import logger
-from src.deps import QdrantVectorStore, OpenAIEmbedding
+from src.deps import OpenAIEmbedding, create_vector_store
 from src.deps import DocumentChunker, DocumentLoader
 from src.settings import settings
 from src.models import ChunkStrategy
@@ -11,15 +11,14 @@ class VectorDBIngestion:
         documents_dir: str,
         chunks_dir: str,
         chunk_strategy: str = ChunkStrategy.HYBRID.value,
-        qdrant_collection_name: str = None,
+        collection_name: str = None,
     ):
         if chunk_strategy not in [e.value for e in ChunkStrategy]:
             raise ValueError(
                 f"Invalid chunk strategy '{chunk_strategy}'. Must be one of: {ChunkStrategy.values()}"
             )
         self.chunk_strategy = chunk_strategy
-        if qdrant_collection_name is not None:
-            settings.qdrant_collection_name = qdrant_collection_name
+        self.collection_name = collection_name or settings.active_collection_name
 
         self.document_converter = DocumentLoader(output_dir=documents_dir)
         self.loader_and_chunker = DocumentChunker(
@@ -31,22 +30,19 @@ class VectorDBIngestion:
             api_key=settings.embedding_api_key,
             model_id=settings.embedding_model,
         )
-        self.vector_store = QdrantVectorStore(
-            uri=settings.qdrant_uri,
-            api_key=settings.qdrant_api_key,
-        )
+        self.vector_store = create_vector_store()
         try:
             self.vector_store.create_collection(
-                collection_name=settings.qdrant_collection_name,
+                collection_name=self.collection_name,
                 embedding_size=settings.embedding_dimensions,
                 distance="cosine",
             )
             logger.info(
-                f"Created collection {settings.qdrant_collection_name} with embedding size {settings.embedding_dimensions}"
+                f"Created collection {self.collection_name} with embedding size {settings.embedding_dimensions}"
             )
         except Exception as e:
             logger.error(
-                f"Error creating collection {settings.qdrant_collection_name}: {e}"
+                f"Error creating collection {self.collection_name}: {e}"
             )
             raise e
 
@@ -67,18 +63,18 @@ class VectorDBIngestion:
             payloads.append(chunk.model_dump())
 
         self.vector_store.add_embeddings(
-            collection_name=settings.qdrant_collection_name,
+            collection_name=self.collection_name,
             embeddings=embeddings,
             payloads=payloads,
         )
         logger.info(
-            f"{len(embeddings)} embeddings and {len(payloads)} payloads added to vector store: {settings.qdrant_collection_name}"
+            f"{len(embeddings)} embeddings and {len(payloads)} payloads added to vector store: {self.collection_name}"
         )
 
         return {
             "file_save_path": file_save_path,
             "chunk_save_path": chunk_save_path,
-            "qdrant_collection_name": settings.qdrant_collection_name,
+            "collection_name": self.collection_name,
             "chunk_count": len(chunks),
             "chunks": [
                 {
@@ -99,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--documents_dir", type=str, default="data/papers/docs")
     parser.add_argument("--chunks_dir", type=str, default="data/papers/chunks")
     parser.add_argument(
-        "--qdrant_collection_name", type=str, required=False, default=None
+        "--collection_name", type=str, required=False, default=None
     )
     parser.add_argument(
         "--chunk_strategy",
@@ -113,7 +109,7 @@ if __name__ == "__main__":
     pipeline = VectorDBIngestion(
         documents_dir=args.documents_dir,
         chunks_dir=args.chunks_dir,
-        qdrant_collection_name=args.qdrant_collection_name,
+        collection_name=args.collection_name,
         chunk_strategy=args.chunk_strategy,
     )
     results = pipeline.ingest_file(args.file_path)

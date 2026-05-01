@@ -4,6 +4,8 @@ from typing import List, Dict, Optional, Union
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
+from .base import VectorQueryResult, ScoredPoint
+
 
 class QdrantVectorStore:
     def __init__(self, uri: str, api_key: str):
@@ -99,13 +101,19 @@ class QdrantVectorStore:
         collection_name: str,
         query_vector: list[float],
         top_k: int = 5,
-    ) -> List[models.ScoredPoint]:
-        return self.client.query_points(
+    ) -> VectorQueryResult:
+        result = self.client.query_points(
             collection_name=collection_name,
             query=query_vector,
             limit=top_k,
             with_payload=True,
             with_vectors=False,
+        )
+        return VectorQueryResult(
+            points=[
+                ScoredPoint(payload=dict(p.payload), score=p.score)
+                for p in result.points
+            ]
         )
 
     @staticmethod

@@ -11,7 +11,7 @@
 
 ## Overview
 
-**newbieAR** is a self-contained RAG research platform that covers every stage of the RAG lifecycle: document ingestion into both a vector store and a knowledge graph, hybrid retrieval, an agentic layer with tool-calling, synthetic test-case generation, and automated metric-based evaluation. It is designed to be a hands-on learning project and a starting point for experimenting with modern RAG architectures — combining dense vector search (Qdrant) with graph-based retrieval (Neo4j via Graphiti), orchestrated by a [pydantic-ai](https://github.com/pydantic/pydantic-ai) agent and evaluated with [deepeval](https://github.com/confident-ai/deepeval).
+**newbieAR** is a self-contained RAG research platform that covers every stage of the RAG lifecycle: document ingestion into both a vector store and a knowledge graph, hybrid retrieval, an agentic layer with tool-calling, synthetic test-case generation, and automated metric-based evaluation. It is designed to be a hands-on learning project and a starting point for experimenting with modern RAG architectures — combining dense vector search (Qdrant or Milvus) with graph-based retrieval (Neo4j via Graphiti), orchestrated by a [pydantic-ai](https://github.com/pydantic/pydantic-ai) agent and evaluated with [deepeval](https://github.com/confident-ai/deepeval).
 
 ---
 
@@ -20,7 +20,7 @@
 ```mermaid
 flowchart TD
     A[Raw Documents] --> B[Ingestion]
-    B --> C[(Qdrant\nVector DB)]
+    B --> C[(Qdrant / Milvus\nVector DB)]
     B --> D[(Neo4j\nGraph DB)]
     C --> E[BasicRAG\nvector search + reranking]
     D --> F[GraphRAG\nhybrid BM25 + cosine + BFS]
@@ -49,7 +49,7 @@ newbieAR/
 │   │       ├── sessions.py   # POST/DELETE /sessions
 │   │       └── chat.py       # POST /chat → SSE stream
 │   ├── agents/          # pydantic-ai agentic RAG (agent, tools, deps)
-│   ├── deps/            # infra clients: Qdrant, Graphiti, OpenAI, CrossEncoder, MinIO
+│   ├── deps/            # infra clients: Qdrant, Milvus, Graphiti, OpenAI, CrossEncoder, MinIO
 │   ├── evaluation/      # deepeval metrics runner + Bedrock wrapper
 │   ├── ingestion/       # vector DB and graph DB ingestion pipelines
 │   ├── models/          # pydantic data models (ChunkInfo, RetrievalInfo, etc.)
@@ -59,6 +59,7 @@ newbieAR/
 │   └── settings.py      # ProjectSettings singleton (pydantic-settings)
 ├── infras/
 │   ├── docker-compose.qdrant.yaml
+│   ├── docker-compose.milvus.yaml
 │   ├── docker-compose.neo4j.yaml
 │   └── docker-compose.minio.yaml
 ├── tests/               # pytest test suite (asyncio_mode = auto)
@@ -73,7 +74,7 @@ newbieAR/
 
 - **Python** `>= 3.12`
 - **[uv](https://docs.astral.sh/uv/)** — the only supported package manager
-- **Docker** — for Qdrant, Neo4j, and MinIO
+- **Docker** — for Qdrant (or Milvus), Neo4j, and MinIO
 - **API keys** — OpenAI-compatible LLM + embedding endpoint, AWS credentials (Bedrock), deepeval Confident AI key, Langfuse (optional)
 
 ---
@@ -92,8 +93,9 @@ uv sync
 cp .env.example .env
 # Fill in all required values — see Configuration section below
 
-# 4. Start infrastructure
-docker compose -f infras/docker-compose.qdrant.yaml up -d
+# 4. Start infrastructure (pick one vector store)
+docker compose -f infras/docker-compose.qdrant.yaml up -d   # Qdrant (default)
+# docker compose -f infras/docker-compose.milvus.yaml up -d # or Milvus
 docker compose -f infras/docker-compose.neo4j.yaml up -d
 
 # 5. Ingest documents
@@ -113,20 +115,23 @@ uv run python -m src.agents.agentic_rag \
 
 | Service | Compose file | Ports | Purpose |
 |---------|-------------|-------|---------|
-| **Qdrant** | `docker-compose.qdrant.yaml` | 6333, 6334 | Vector store for dense retrieval |
+| **Qdrant** | `docker-compose.qdrant.yaml` | 6333, 6334 | Vector store for dense retrieval (default) |
+| **Milvus** | `docker-compose.milvus.yaml` | 19530, 9091 | Alternative vector store for dense retrieval |
 | **Neo4j** | `docker-compose.neo4j.yaml` | 7474, 7687 | Graph DB for Graphiti knowledge graph |
 | **MinIO** | `docker-compose.minio.yaml` | 9000, 9001 | Object storage (optional) |
 
+Pick **one** vector store backend (Qdrant or Milvus) and set `VECTOR_STORE_PROVIDER` accordingly in `.env`.
+
 ```bash
-# Start all services
+# Start with Qdrant (default)
 docker compose -f infras/docker-compose.qdrant.yaml up -d
+
+# — OR — Start with Milvus (includes etcd + internal MinIO)
+docker compose -f infras/docker-compose.milvus.yaml up -d
+
+# Graph DB and object storage
 docker compose -f infras/docker-compose.neo4j.yaml up -d
 docker compose -f infras/docker-compose.minio.yaml up -d
-
-# Stop all services
-docker compose -f infras/docker-compose.qdrant.yaml down
-docker compose -f infras/docker-compose.neo4j.yaml down
-docker compose -f infras/docker-compose.minio.yaml down
 ```
 
 ---
@@ -135,7 +140,7 @@ docker compose -f infras/docker-compose.minio.yaml down
 
 ### 1. Ingest — Vector DB
 
-Loads a document, chunks it, embeds, and upserts to Qdrant.
+Loads a document, chunks it, embeds, and upserts to the configured vector store (Qdrant or Milvus).
 
 ```bash
 uv run python -m src.ingestion.ingest_vectordb \
@@ -159,7 +164,7 @@ Dense vector search with optional score-threshold filtering and cross-encoder re
 
 ```bash
 uv run python -m src.retrieval.basic_rag \
-  --qdrant_collection_name research_papers \
+  --collection_name research_papers \
   --top_k 10
 ```
 
@@ -329,8 +334,13 @@ Copy `.env.example` to `.env` and fill in the values below.
 | `EMBEDDING_API_KEY` | Embedding | API key for embedding endpoint |
 | `EMBEDDING_BASE_URL` | Embedding | Base URL for embedding endpoint |
 | `EMBEDDING_DIMENSIONS` | Embedding | Vector dimensionality |
+| `VECTOR_STORE_PROVIDER` | Vector Store | `qdrant` (default) or `milvus` |
 | `QDRANT_URI` | Qdrant | Qdrant server URI (e.g. `http://localhost:6333`) |
+| `QDRANT_API_KEY` | Qdrant | Qdrant API key (optional) |
 | `QDRANT_COLLECTION_NAME` | Qdrant | Default collection name |
+| `MILVUS_URI` | Milvus | Milvus server URI (e.g. `http://localhost:19530`) |
+| `MILVUS_TOKEN` | Milvus | Milvus auth token (optional) |
+| `MILVUS_COLLECTION_NAME` | Milvus | Default collection name |
 | `GRAPH_DB_URI` | Neo4j | Neo4j Bolt URI (e.g. `bolt://localhost:7687`) |
 | `GRAPH_DB_USERNAME` | Neo4j | Neo4j username |
 | `GRAPH_DB_PASSWORD` | Neo4j | Neo4j password |
@@ -354,6 +364,7 @@ Copy `.env.example` to `.env` and fill in the values below.
 | [pydantic-ai](https://github.com/pydantic/pydantic-ai) | Agentic RAG orchestration and tool calling |
 | [deepeval](https://github.com/confident-ai/deepeval) | Synthetic data generation and RAG evaluation |
 | [Qdrant](https://qdrant.tech/) | Vector database for dense retrieval |
+| [Milvus](https://milvus.io/) | Alternative vector database for dense retrieval |
 | [Graphiti](https://github.com/getzep/graphiti) | Knowledge graph construction and retrieval over Neo4j |
 | [docling](https://github.com/DS4SD/docling) | Document loading and conversion |
 | [sentence-transformers](https://www.sbert.net/) | Cross-encoder reranking |

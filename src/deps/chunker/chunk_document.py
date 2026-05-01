@@ -17,6 +17,8 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownTextSerializer,
 )
 from src.models import ChunkInfo, ChunkStrategy
+from src.deps.document_loader.ocr_processor import DocumentAIOCRProcessor
+from src.settings import settings
 
 
 MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
@@ -28,7 +30,7 @@ class MDSerializerProvider(ChunkingSerializerProvider):
         return ChunkingDocSerializer(
             doc=doc,
             params=MarkdownParams(image_placeholder="<!-- image -->"),
-            table_serializer=MarkdownTableSerializer(),  # configuring a different table serializer
+            table_serializer=MarkdownTableSerializer(),
             text_serializer=MarkdownTextSerializer(),
         )
 
@@ -50,7 +52,8 @@ class DocumentChunker:
             )
         self.strategy = strategy
         self.output_dir = output_dir
-        self.loader = DocumentConverter()
+        self.converter = DocumentConverter()
+        self.ocr_processor = self._build_ocr_processor()
         self.tokenizer = HuggingFaceTokenizer(
             tokenizer=AutoTokenizer.from_pretrained(tokenizer_name)
         )
@@ -68,11 +71,46 @@ class DocumentChunker:
                 merge_list_items=merge_list_items,
             )
 
+    def _build_ocr_processor(self) -> DocumentAIOCRProcessor | None:
+        doc_ai = settings.google_doc_ai
+        if doc_ai.google_doc_ai_project_id and doc_ai.google_doc_ai_processor_id:
+            try:
+                return DocumentAIOCRProcessor()
+            except Exception as e:
+                logger.warning(f"Document AI OCR unavailable: {e}")
+        return None
+
+    def _load_document(self, file_path: str):
+        """Load a document, routing scanned PDFs through OCR first.
+
+        For scanned PDFs: runs Document AI OCR to produce a markdown file,
+        then converts that markdown via docling to get a Document object
+        suitable for chunking.
+
+        For regular documents: converts directly via docling.
+        """
+        if self.ocr_processor and self.ocr_processor.is_scanned_pdf(file_path):
+            logger.info(
+                f"Scanned PDF detected – running Document AI OCR on {file_path}"
+            )
+            ocr_text = self.ocr_processor.ocr(file_path)
+
+            md_path = Path(self.output_dir or ".") / f"{Path(file_path).stem}_ocr.md"
+            md_path.parent.mkdir(parents=True, exist_ok=True)
+            md_path.write_text(ocr_text, encoding="utf-8")
+            logger.info(
+                f"OCR complete ({len(ocr_text)} chars), converting markdown for chunking..."
+            )
+
+            return self.converter.convert(source=str(md_path)).document
+
+        return self.converter.convert(source=file_path).document
+
     def chunk_document(self, file_path: str) -> tuple[list[ChunkInfo], str]:
         try:
             logger.info(f"Loading document from {Path(file_path).name}...")
             t = time.time()
-            document = self.loader.convert(source=file_path).document
+            document = self._load_document(file_path)
             logger.info(f"Document loaded in {time.time() - t:.2f} seconds")
 
             logger.info(f"Chunking document using {self.strategy} strategy...")
@@ -88,7 +126,6 @@ class DocumentChunker:
                 contextualized_text = self.chunker.contextualize(chunk=chunk)
                 contextualized_tokens = self.tokenizer.count_tokens(contextualized_text)
 
-                # Extract strategy-specific metadata
                 if self.strategy == ChunkStrategy.HIERARCHICAL.value:
                     doc_items_refs = [it.self_ref for it in chunk.meta.doc_items]
                     doc_items_labels = [it.label.value for it in chunk.meta.doc_items]
@@ -119,7 +156,7 @@ class DocumentChunker:
             return chunks, output_path
 
         except Exception as e:
-            logger.error(f"✗ Failed to chunk {file_path.name}: {e}")
+            logger.error(f"✗ Failed to chunk {file_path}: {e}")
             raise e
 
     def _save_chunks(self, file_path: str, chunks: list[ChunkInfo]) -> str:
