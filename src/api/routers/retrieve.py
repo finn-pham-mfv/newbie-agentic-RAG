@@ -23,7 +23,7 @@ class GraphRetrieveRequest(BaseModel):
 
 @router.post("/vector")
 async def retrieve_vector(req: VectorRetrieveRequest):
-    basic_rag = BasicRAG(qdrant_collection_name=req.collection_name)
+    basic_rag = BasicRAG(collection_name=req.collection_name)
     if req.rerank:
         basic_rag.cross_encoder = SentenceTransformersReranker()
 

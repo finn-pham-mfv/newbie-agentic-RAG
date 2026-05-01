@@ -8,7 +8,7 @@ from deepeval.models import DeepEvalBaseLLM
 
 from .schema import ContextScore
 from .prompts.context_evaluation import CONTEXT_EVALUATION
-from src.deps import DocumentChunker, OpenAIEmbedding, QdrantVectorStore
+from src.deps import DocumentChunker, OpenAIEmbedding, VectorStore
 
 
 def save_goldens_to_files(goldens: list[Golden], output_dir: str = "goldens"):
@@ -40,14 +40,14 @@ async def generate_contexts(
     file_path: str,
     model: DeepEvalBaseLLM,
     embedder: OpenAIEmbedding,
-    vector_store: QdrantVectorStore,
+    vector_store: VectorStore,
     embedding_size: int,
     num_contexts: int = 5,
     context_size: int = 3,
     chunk_quality_threshold: float = 0.8,
     max_tries: int = 10,
 ) -> list[list[str]]:
-    """Chunk a document with docling, embed all chunks, store in Qdrant, then
+    """Chunk a document with docling, embed all chunks, store in a vector DB, then
     build semantically coherent contexts by retrieving k-1 nearest neighbors
     for quality-filtered seed chunks.
 
@@ -60,7 +60,7 @@ async def generate_contexts(
         file_path: Path to the document (PDF, DOCX, etc.)
         model: LLM used by evaluate_chunk to score candidate seeds.
         embedder: OpenAIEmbedding instance for embedding chunk texts.
-        vector_store: QdrantVectorStore instance for similarity search.
+        vector_store: VectorStore instance for similarity search.
         embedding_size: Dimensionality of the embedding vectors.
         num_contexts: Number of contexts to build per document.
         context_size: Chunks per context (1 seed + context_size-1 neighbors).

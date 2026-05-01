@@ -13,7 +13,7 @@ store = SessionStore()
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CreateSessionResponse)
 async def create_session(request: CreateSessionRequest) -> CreateSessionResponse:
     deps = AgentDependencies(
-        basic_rag=BasicRAG(qdrant_collection_name=request.collection_name),
+        basic_rag=BasicRAG(collection_name=request.collection_name),
         graph_rag=GraphRAG(),
         top_k=request.top_k,
     )

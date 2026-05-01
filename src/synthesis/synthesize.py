@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from deepeval.synthesizer import Synthesizer, Evolution
 
 from src.settings import settings
-from src.deps import OpenAIEmbedding, QdrantVectorStore
+from src.deps import OpenAIEmbedding, create_vector_store
 from src.synthesis.generate_contexts import save_goldens_to_files, generate_contexts
 
 
@@ -101,10 +101,7 @@ embedder = OpenAIEmbedding(
     model_id=settings.embedding_model,
 )
 
-vector_store = QdrantVectorStore(
-    uri=settings.qdrant_uri,
-    api_key=settings.qdrant_api_key,
-)
+vector_store = create_vector_store()
 
 
 if __name__ == "__main__":

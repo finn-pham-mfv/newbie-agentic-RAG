@@ -30,11 +30,21 @@ class LangfuseSettings(ProjectBaseSettings):
     langfuse_base_url: str | None = None
 
 
+class VectorStoreProviderSettings(ProjectBaseSettings):
+    vector_store_provider: str = "qdrant"  # "qdrant" or "milvus"
+
+
 class QdrantVectorStoreSettings(ProjectBaseSettings):
     qdrant_uri: str | None = None
     qdrant_api_key: str | None = None
     qdrant_collection_name: str | None = None
     retrieval_score_threshold: float = 0.0
+
+
+class MilvusVectorStoreSettings(ProjectBaseSettings):
+    milvus_uri: str | None = None
+    milvus_token: str | None = None
+    milvus_collection_name: str | None = None
 
 
 class OpenAIEmbeddingSettings(ProjectBaseSettings):
@@ -109,7 +119,9 @@ class GoogleDocAISettings(ProjectBaseSettings):
 class ProjectSettings(
     OpenAILLMSettings,
     LangfuseSettings,
+    VectorStoreProviderSettings,
     QdrantVectorStoreSettings,
+    MilvusVectorStoreSettings,
     OpenAIEmbeddingSettings,
     ConfidentSettings,
     RerankerSettings,
@@ -130,6 +142,17 @@ class ProjectSettings(
     @property
     def qdrant_vector_store(self) -> QdrantVectorStoreSettings:
         return QdrantVectorStoreSettings(**self.model_dump())
+
+    @property
+    def milvus_vector_store(self) -> MilvusVectorStoreSettings:
+        return MilvusVectorStoreSettings(**self.model_dump())
+
+    @property
+    def active_collection_name(self) -> str | None:
+        """Return the collection name for the currently active vector store provider."""
+        if self.vector_store_provider == "milvus":
+            return self.milvus_collection_name
+        return self.qdrant_collection_name
 
     @property
     def langfuse(self) -> LangfuseSettings:

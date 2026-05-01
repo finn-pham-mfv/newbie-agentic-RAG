@@ -8,7 +8,7 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 from src.ingestion.ingest_vectordb import VectorDBIngestion
 from src.ingestion.ingest_graphdb import GraphitiIngestion
 from src.models import ChunkStrategy
-from src.deps import QdrantVectorStore, GraphitiClient
+from src.deps import create_vector_store, GraphitiClient
 from src.settings import settings
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -32,7 +32,7 @@ async def ingest_vector(
             ingestion = VectorDBIngestion(
                 documents_dir="data/papers/docs",
                 chunks_dir="data/papers/chunks",
-                qdrant_collection_name=collection_name,
+                collection_name=collection_name,
                 chunk_strategy=chunk_strategy,
             )
         except ValueError as exc:
@@ -130,8 +130,8 @@ async def get_graph_summary():
 
 @router.get("/collections/{name}")
 async def get_collection_info(name: str):
-    qs = QdrantVectorStore(uri=settings.qdrant_uri, api_key=settings.qdrant_api_key)
-    info = qs.get_collection_info(name)
+    vs = create_vector_store()
+    info = vs.get_collection_info(name)
     if info is None:
         raise HTTPException(status_code=404, detail=f"Collection '{name}' not found")
     return info
@@ -139,9 +139,9 @@ async def get_collection_info(name: str):
 
 @router.delete("/collections/{name}")
 async def delete_collection(name: str):
-    qs = QdrantVectorStore(uri=settings.qdrant_uri, api_key=settings.qdrant_api_key)
+    vs = create_vector_store()
     try:
-        qs.delete_collection(name)
+        vs.delete_collection(name)
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return {"deleted": name}

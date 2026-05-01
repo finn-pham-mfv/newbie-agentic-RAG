@@ -1,17 +1,14 @@
 from src.settings import settings
 from src.models import RetrievalInfo
 from src.prompts import RAG_GENERATION_PROMPT
-from src.deps import OpenAIEmbedding, QdrantVectorStore, OpenAILLMClient
+from src.deps import OpenAIEmbedding, OpenAILLMClient, create_vector_store
 from src.retrieval.utils import display_rag_results
 
 
 class BasicRAG:
-    def __init__(self, qdrant_collection_name: str = None):
-        self.collection_name = qdrant_collection_name or settings.qdrant_collection_name
-        self.vector_store = QdrantVectorStore(
-            uri=settings.qdrant_uri,
-            api_key=settings.qdrant_api_key,
-        )
+    def __init__(self, collection_name: str = None):
+        self.collection_name = collection_name or settings.active_collection_name
+        self.vector_store = create_vector_store()
         self.embedder = OpenAIEmbedding(
             base_url=settings.embedding_base_url,
             api_key=settings.embedding_api_key,
@@ -99,15 +96,15 @@ if __name__ == "__main__":
 
     async def _main():
         parser = argparse.ArgumentParser()
-        parser.add_argument("--qdrant_collection_name", type=str, required=True)
+        parser.add_argument("--collection_name", type=str, required=True)
         parser.add_argument("--top_k", type=int, default=10)
         args = parser.parse_args()
 
-        basic_rag = BasicRAG(qdrant_collection_name=args.qdrant_collection_name)
+        basic_rag = BasicRAG(collection_name=args.collection_name)
         console = Console()
         console.print(
             Panel.fit(
-                f"Basic Retrieval CLI Mode - Collection: {args.qdrant_collection_name}",
+                f"Basic Retrieval CLI Mode - Collection: {args.collection_name}",
                 style="bold cyan",
             )
         )

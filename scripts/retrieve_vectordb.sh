@@ -1,1 +1,1 @@
-uv run python -m src.retrieval.basic_rag --qdrant_collection_name academic_papers
+uv run python -m src.retrieval.basic_rag --collection_name academic_papers

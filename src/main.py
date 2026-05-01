@@ -9,16 +9,16 @@ class NewbieAR:
         documents_dir: str,
         chunks_dir: str,
         chunk_strategy: str = ChunkStrategy.HYBRID.value,
-        qdrant_collection_name: str = None,
+        collection_name: str = None,
     ):
         self.basic_rag = BasicRAG(
-            qdrant_collection_name=qdrant_collection_name,
+            collection_name=collection_name,
         )
         self.vector_db_ingestion = VectorDBIngestion(
             documents_dir=documents_dir,
             chunks_dir=chunks_dir,
             chunk_strategy=chunk_strategy,
-            qdrant_collection_name=qdrant_collection_name,
+            collection_name=collection_name,
         )
 
     def ingest_file(self, file_path: str):
